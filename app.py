@@ -12,19 +12,24 @@ st.set_page_config(
 EXCEL_DATA = "CONSOLIDADO EPC.xlsx"
 ASISTENCIA_FILE = "registro_asistencias.csv"
 
-@st.cache_data
+@st.cache_data(ttl=1)
 def cargar_datos_base():
-    try:
-        if not os.path.exists(EXCEL_DATA):
-            return pd.DataFrame()
-        df = pd.read_excel(EXCEL_DATA, sheet_name="EQUIPO POLITICO", header=1)
-        df.columns = [str(c).strip() for c in df.columns]
-        df["CEDULA"] = df["CEDULA"].astype(str).str.split(".").str[0].str.strip()
-        return df
-    except Exception as e:
-        st.error(f"Error cargando Excel base: {e}")
-        return pd.DataFrame()
+  """Carga el archivo Excel principal con la data precargada sin bloqueos"""
+  try:
+    if not os.path.exists(EXCEL_DATA):
+      return None
+    df = pd.read_excel(EXCEL_DATA, sheet_name="EQUIPO POLITICO", header=1)
+    df.columns = [str(c).strip().upper() for c in df.columns]
 
+    if "CEDULA" in df.columns:
+      df["CEDULA"] = (
+          df["CEDULA"].astype(str).str.split(".").str[0].str.strip()
+      )
+    return df
+  except Exception as e:
+    st.error(f"Error al cargar el archivo Excel base: {e}")
+    return None
+      
 st.title("📋 Control Diario de Asistencia EPC")
 fecha_hoy = datetime.now().strftime("%Y-%m-%d")
 st.markdown(f"**Fecha actual:** `{fecha_hoy}`")
